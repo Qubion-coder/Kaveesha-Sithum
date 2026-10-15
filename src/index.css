@@ -8,19 +8,19 @@
   --font-montserrat: "Montserrat", sans-serif;
   --font-playball: "Playball", cursive;
 
-  --color-sage: #f3a7cd;
-  --color-paper: #FDFBF7;
+  --color-sage: #d4a017;
+  --color-paper: #FFFFFF;
 
-  --color-theme-50: #fdf7fb;
-  --color-theme-100: #f8eaf3;
-  --color-theme-200: #f1d6e8;
-  --color-theme-300: #e8bdd9;
-  --color-theme-400: #dd9ec8;
-  --color-theme-500: #f3a7cd;
-  --color-theme-600: #bc5f99;
-  --color-theme-700: #9f4c80;
-  --color-theme-800: #833f69;
-  --color-theme-900: #6c3557;
+  --color-theme-50: #fffbf0;
+  --color-theme-100: #fdf3d7;
+  --color-theme-200: #f8e3a8;
+  --color-theme-300: #efcd73;
+  --color-theme-400: #e2b43f;
+  --color-theme-500: #d4a017;
+  --color-theme-600: #b38612;
+  --color-theme-700: #8f6a0f;
+  --color-theme-800: #6e510c;
+  --color-theme-900: #4f3a09;
 }
 
 :root {
@@ -37,20 +37,23 @@ html, body {
   width: 100%;
 }
 
+.hero-gold-text {
+  display: inline-block;
+  padding: 0.06em 0.18em 0.16em;
+  background-image: linear-gradient(180deg, #d9b45a 0%, #b38612 45%, #8f6a0f 80%, #6e510c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 6px rgba(255, 253, 246, 0.9));
+}
+
 .serif {
   font-family: var(--font-serif);
 }
 
 .script {
   font-family: var(--font-script);
-}
-
-.clip-path-envelope {
-  clip-path: polygon(0 0, 50% 100%, 100% 0);
-}
-
-.clip-path-envelope-bottom {
-  clip-path: polygon(0 100%, 50% 0, 100% 100%);
 }
 
 /* 3D Transform Utilities */
@@ -77,7 +80,6 @@ html, body {
   width: clamp(300px, 38vw, 620px);
   aspect-ratio: 1 / 1;
   opacity: var(--mandala-accent-opacity);
-  filter: sepia(1) saturate(1.55) hue-rotate(285deg) brightness(1.12) contrast(1.05);
 }
 
 .mandala-corner.is-soft {
@@ -117,9 +119,9 @@ html, body {
 
 .website-shell {
   background:
-    radial-gradient(circle at 18% 14%, rgba(243, 167, 205, 0.19), transparent 38%),
-    radial-gradient(circle at 84% 72%, rgba(221, 158, 200, 0.16), transparent 42%),
-    linear-gradient(180deg, #fffdf8 0%, #fdfaf5 42%, #fffdf8 100%);
+    radial-gradient(circle at 18% 14%, rgba(226, 180, 63, 0.12), transparent 38%),
+    radial-gradient(circle at 84% 72%, rgba(239, 205, 115, 0.12), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #fffdf8 42%, #ffffff 100%);
 }
 
 .section-floral-overlay {
@@ -131,23 +133,23 @@ html, body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 25%, rgba(243, 167, 205, 0.16), transparent 35%),
-    radial-gradient(circle at 78% 75%, rgba(232, 189, 217, 0.14), transparent 38%);
+    radial-gradient(circle at 20% 25%, rgba(226, 180, 63, 0.1), transparent 35%),
+    radial-gradient(circle at 78% 75%, rgba(239, 205, 115, 0.1), transparent 38%);
 }
 
 .paper-grain {
   background-image:
     radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.85) 0.5px, transparent 0.8px),
-    radial-gradient(circle at 78% 42%, rgba(210, 180, 198, 0.2) 0.6px, transparent 0.9px),
-    radial-gradient(circle at 42% 76%, rgba(164, 124, 146, 0.1) 0.5px, transparent 0.8px);
+    radial-gradient(circle at 78% 42%, rgba(212, 180, 110, 0.18) 0.6px, transparent 0.9px),
+    radial-gradient(circle at 42% 76%, rgba(160, 125, 50, 0.08) 0.5px, transparent 0.8px);
   background-size: 9px 9px, 15px 15px, 18px 18px;
 }
 
 .paper-grain-strong {
   background-image:
     radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.88) 0.55px, transparent 0.85px),
-    radial-gradient(circle at 70% 64%, rgba(190, 145, 170, 0.22) 0.65px, transparent 0.95px),
-    linear-gradient(180deg, rgba(255, 251, 247, 0.75), rgba(253, 245, 238, 0.8));
+    radial-gradient(circle at 70% 64%, rgba(190, 150, 70, 0.18) 0.65px, transparent 0.95px),
+    linear-gradient(180deg, rgba(255, 251, 247, 0.75), rgba(255, 250, 238, 0.8));
   background-size: 8px 8px, 14px 14px, 100% 100%;
 }
 
