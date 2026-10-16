@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, MapPin, Calendar, Clock, Volume2, VolumeX } from "lucide-react";
+import { submitToSheet } from "./sheets";
+import { Sparkles, MapPin, Calendar, Clock, Volume2, VolumeX, Heart } from "lucide-react";
 
 /**
  * Premium Engagement Invitation Theme
@@ -344,6 +345,21 @@ function OurMoments() {
   );
 }
 
+type FormStatus = { state: "idle" | "sending" | "sent" | "error"; message?: string };
+
+function FormStatusNote({ status, tone }: { status: FormStatus; tone: "dark" | "light" }) {
+  if (status.state !== "sent" && status.state !== "error") return null;
+  const isError = status.state === "error";
+  const color = isError
+    ? tone === "dark" ? "text-red-300" : "text-red-600"
+    : tone === "dark" ? "text-theme-200" : "text-theme-700";
+  return (
+    <p role="status" className={`text-center text-sm font-serif italic ${color}`}>
+      {status.message}
+    </p>
+  );
+}
+
 function CountdownTimer() {
   const targetDate = new Date("November 14, 2026 18:00:00").getTime();
   const [timeLeft, setTimeLeft] = useState(targetDate - Date.now());
@@ -404,10 +420,61 @@ function CountdownTimer() {
   );
 }
 
-export default function WeddingInvitation() {
+export default function WeddingInvitation({ guestName = "" }: { guestName?: string }) {
   const [isOpened, setIsOpened] = useState(false);
   const [isIntroPlaying, setIsIntroPlaying] = useState(false);
   const introVideoRef = useRef<HTMLVideoElement>(null);
+  const [rsvpStatus, setRsvpStatus] = useState<FormStatus>({ state: "idle" });
+  const [wishStatus, setWishStatus] = useState<FormStatus>({ state: "idle" });
+
+  const handleRsvpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    if (!name) {
+      setRsvpStatus({ state: "error", message: "Please enter your name." });
+      return;
+    }
+    const guests = Number(data.get("guests") ?? 1);
+    setRsvpStatus({ state: "sending" });
+    try {
+      await submitToSheet({
+        type: "rsvp",
+        name,
+        guests,
+        dietary: String(data.get("dietary") ?? "").trim(),
+        invitedAs: guestName,
+      });
+      setRsvpStatus({
+        state: "sent",
+        message: guests > 0 ? "Thank you! We can't wait to celebrate with you." : "Thank you for letting us know. You'll be missed!",
+      });
+      form.reset();
+    } catch {
+      setRsvpStatus({ state: "error", message: "Sorry, we couldn't send your RSVP. Please try again." });
+    }
+  };
+
+  const handleWishSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    const message = String(data.get("message") ?? "").trim();
+    if (!name || !message) {
+      setWishStatus({ state: "error", message: "Please add your name and a message." });
+      return;
+    }
+    setWishStatus({ state: "sending" });
+    try {
+      await submitToSheet({ type: "wish", name, message, invitedAs: guestName });
+      setWishStatus({ state: "sent", message: "Thank you for your lovely wishes!" });
+      form.reset();
+    } catch {
+      setWishStatus({ state: "error", message: "Sorry, we couldn't send your wishes. Please try again." });
+    }
+  };
   const musicRef = useRef<HTMLAudioElement>(null);
   const [isMusicOn, setIsMusicOn] = useState(false);
 
@@ -720,6 +787,14 @@ export default function WeddingInvitation() {
                   className="flex flex-col items-center mb-8 md:mb-16"
                 >
                   <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent to-theme-400 mb-6 md:mb-10" />
+                  {guestName && (
+                    <div className="relative mb-8 md:mb-10 px-8 py-5 md:px-12 md:py-6 rounded-2xl bg-gradient-to-b from-theme-50 to-white border border-theme-300 shadow-[0_15px_40px_-20px_rgba(110,81,12,0.45)] max-w-[90vw]">
+                      <div className="absolute inset-1.5 rounded-xl border border-theme-200/80 pointer-events-none" />
+                      <p className="relative font-serif italic text-stone-500 text-sm md:text-base">Dear</p>
+                      <p className="relative font-script text-theme-800 text-4xl md:text-6xl leading-tight break-words drop-shadow-sm">{guestName}</p>
+                      <div className="relative mt-3 flex justify-center"><HeroDivider /></div>
+                    </div>
+                  )}
                   <p className="text-theme-700 text-[9px] md:text-[12px] tracking-[0.4em] md:tracking-[0.6em] uppercase font-bold text-center leading-loose">
                     You are cordially invited to<br className="hidden md:block" /> celebrate the engagement of
                   </p>
@@ -743,57 +818,44 @@ export default function WeddingInvitation() {
                   </div>
                 </motion.div>
 
-                <div className="relative w-full flex flex-col md:flex-row items-center justify-center md:items-stretch gap-6 md:gap-10 my-12 md:my-20 z-10 px-2 lg:px-8">
-
-                  {/* Kaveesha's Card */}
+                <div className="relative w-full flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-8 my-12 md:my-20 z-10 px-2 lg:px-8">
+                  {/* The Groom */}
                   <motion.div
-                    initial={{ opacity: 0, x: -30, y: 20 }}
-                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    className="relative bg-white w-full max-w-[320px] p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-theme-100/50 rounded-tl-[100px] rounded-br-[100px] md:rounded-tl-[130px] md:rounded-br-[130px] overflow-hidden group flex flex-col justify-center text-center items-center"
+                    transition={{ duration: 0.8 }}
+                    className="text-center lg:text-right flex-1 lg:pr-10 order-4 lg:order-1"
                   >
-                    <div className="absolute inset-2 border border-theme-200/50 rounded-tl-[90px] rounded-br-[90px] md:rounded-tl-[120px] md:rounded-br-[120px] pointer-events-none" />
-                    <div className="absolute inset-0 opacity-[0.02] paper-grain pointer-events-none" />
-                    <div className="relative z-10 space-y-4 py-8 md:py-12">
-                      <div className="space-y-2">
-                        <p className="text-[7px] md:text-[8px] uppercase tracking-[0.4em] font-bold text-stone-400">Beloved daughter of</p>
-                        <p className="text-xs md:text-sm font-cinzel text-stone-600 tracking-wide leading-relaxed">Mr. & Mrs. Perera</p>
-                      </div>
-                      <h3 className="text-5xl md:text-7xl font-playball text-theme-800 group-hover:scale-110 transition-transform duration-700 pt-6 drop-shadow-sm">Kaveesha</h3>
+                    <div className="mb-4 flex flex-col items-center lg:items-end">
+                      <span className="text-theme-700 uppercase tracking-[0.4em] text-[10px] font-bold mb-3 block">The Groom</span>
+                      <h3 className="text-6xl sm:text-7xl font-script text-theme-800 mb-2 drop-shadow-sm leading-tight">Sithum</h3>
+                      <p className="text-stone-500/90 font-serif italic text-base sm:text-lg">Son of<br />Mr. &amp; Mrs. Fernando</p>
+                    </div>
+                    <div className="hidden lg:flex justify-end mt-8">
+                      <Heart className="w-6 h-6 text-theme-400 fill-theme-200/60 hover:scale-110 transition-transform" aria-hidden="true" />
                     </div>
                   </motion.div>
 
-                  {/* Vertical Divider / AMPERSAND */}
-                  <div className="flex flex-row md:flex-col items-center justify-center gap-4 py-4 md:py-0 relative z-20">
-                    <div className="hidden md:block w-px h-32 bg-gradient-to-t from-theme-300 to-transparent" />
-                    <motion.div
-                      initial={{ scale: 0, rotate: -45 }}
-                      whileInView={{ scale: 1, rotate: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-                      className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-theme-500 to-theme-700 rounded-full flex items-center justify-center shadow-xl shadow-theme-900/20 border-4 border-[#fdfaf5]"
-                    >
-                      <span className="text-3xl md:text-5xl font-playball text-white md:-mt-1 drop-shadow-md">&</span>
-                    </motion.div>
-                    <div className="hidden md:block w-px h-32 bg-gradient-to-b from-theme-300 to-transparent" />
+                  <div className="lg:hidden order-3 w-full flex justify-center py-4 opacity-50">
+                    <div className="w-1/2 h-px bg-gradient-to-r from-transparent via-theme-500/60 to-transparent" />
                   </div>
 
-                  {/* Sithum's Card - Offset structurally on desktop */}
+                  {/* The Bride */}
                   <motion.div
-                    initial={{ opacity: 0, x: 30, y: 20 }}
-                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    initial={{ opacity: 0, x: 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.1 }}
-                    className="relative bg-white w-full max-w-[320px] p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-theme-100/50 rounded-tr-[100px] rounded-bl-[100px] md:rounded-tr-[130px] md:rounded-bl-[130px] overflow-hidden group flex flex-col justify-center text-center items-center md:mt-24"
+                    transition={{ duration: 0.8 }}
+                    className="text-center lg:text-left flex-1 lg:pl-10 order-2 lg:order-3"
                   >
-                    <div className="absolute inset-2 border border-theme-200/50 rounded-tr-[90px] rounded-bl-[90px] md:rounded-tr-[120px] md:rounded-bl-[120px] pointer-events-none" />
-                    <div className="absolute inset-0 opacity-[0.02] paper-grain pointer-events-none" />
-                    <div className="relative z-10 space-y-4 py-8 md:py-12">
-                      <div className="space-y-2">
-                        <p className="text-[7px] md:text-[8px] uppercase tracking-[0.4em] font-bold text-stone-400">Beloved son of</p>
-                        <p className="text-xs md:text-sm font-cinzel text-stone-600 tracking-wide leading-relaxed">Mr. & Mrs. Fernando</p>
-                      </div>
-                      <h3 className="text-5xl md:text-7xl font-playball text-theme-800 group-hover:scale-110 transition-transform duration-700 pt-6 drop-shadow-sm">Sithum</h3>
+                    <div className="mb-4 flex flex-col items-center lg:items-start">
+                      <span className="text-theme-700 uppercase tracking-[0.4em] text-[10px] font-bold mb-3 block">The Bride</span>
+                      <h3 className="text-6xl sm:text-7xl font-script text-theme-800 mb-2 drop-shadow-sm leading-tight">Kaveesha</h3>
+                      <p className="text-stone-500/90 font-serif italic text-base sm:text-lg">Daughter of<br />Mr. &amp; Mrs. Perera</p>
+                    </div>
+                    <div className="hidden lg:flex justify-start mt-8">
+                      <Heart className="w-6 h-6 text-theme-400 fill-theme-200/60 hover:scale-110 transition-transform" aria-hidden="true" />
                     </div>
                   </motion.div>
                 </div>
@@ -1008,12 +1070,16 @@ export default function WeddingInvitation() {
 
                   {/* Premium RSVP Form */}
                   <div className="w-full bg-white/5 backdrop-blur-md p-6 sm:p-8 md:p-12 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)]">
-                    <form className="space-y-8 text-left" onSubmit={(e) => e.preventDefault()}>
+                    <form className="space-y-8 text-left" onSubmit={handleRsvpSubmit}>
                       <div className="space-y-3">
                         <label className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] font-bold text-theme-200 ml-2">Full Name</label>
                         <input
                           type="text"
+                          name="name"
+                          required
+                          maxLength={120}
                           placeholder="John & Jane Doe"
+                          defaultValue={guestName}
                           className="w-full bg-transparent border-b border-white/20 px-2 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-theme-300 transition-colors font-cinzel text-lg md:text-xl tracking-wide"
                         />
                       </div>
@@ -1022,6 +1088,7 @@ export default function WeddingInvitation() {
                         <label className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] font-bold text-theme-200 ml-2">Guests</label>
                         <div className="relative">
                           <select
+                            name="guests"
                             defaultValue="1"
                             className="w-full bg-transparent border-b border-white/20 px-2 py-3 text-white focus:outline-none focus:border-theme-300 transition-colors font-cinzel text-lg md:text-xl tracking-wide appearance-none cursor-pointer"
                           >
@@ -1041,6 +1108,8 @@ export default function WeddingInvitation() {
                         <label className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] font-bold text-theme-200 ml-2">Dietary Notes</label>
                         <input
                           type="text"
+                          name="dietary"
+                          maxLength={300}
                           placeholder="Allergies, Vegan, etc."
                           className="w-full bg-transparent border-b border-white/20 px-2 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-theme-300 transition-colors font-cinzel text-lg md:text-xl tracking-wide"
                         />
@@ -1048,13 +1117,16 @@ export default function WeddingInvitation() {
 
                       <div className="pt-10">
                         <button
-                          className="w-full bg-theme-200 text-stone-900 py-5 rounded-full font-bold uppercase tracking-[0.3em] text-[10px] md:text-sm hover:bg-white hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 group inline-flex justify-center items-center gap-4"
+                          type="submit"
+                          disabled={rsvpStatus.state === "sending"}
+                          className="w-full bg-theme-200 text-stone-900 py-5 rounded-full font-bold uppercase tracking-[0.3em] text-[10px] md:text-sm hover:bg-white hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 group inline-flex justify-center items-center gap-4 disabled:opacity-60 disabled:cursor-wait"
                         >
                           <span className="w-1.5 h-1.5 bg-stone-900 rotate-45 group-hover:scale-150 transition-transform" />
-                          Send RSVP
+                          {rsvpStatus.state === "sending" ? "Sending..." : "Send RSVP"}
                           <span className="w-1.5 h-1.5 bg-stone-900 rotate-45 group-hover:scale-150 transition-transform" />
                         </button>
                       </div>
+                      <FormStatusNote status={rsvpStatus} tone="dark" />
                     </form>
                   </div>
                 </motion.div>
@@ -1092,11 +1164,15 @@ export default function WeddingInvitation() {
                       {/* Decorative internal lines */}
                       <div className="absolute inset-2 md:inset-4 border-[0.5px] border-theme-200/50 rounded-tr-[3.5rem] rounded-bl-[3.5rem] pointer-events-none transition-colors duration-700 group-hover:border-theme-300/80" />
 
-                      <form className="space-y-8 text-left relative z-10" onSubmit={(e) => e.preventDefault()}>
+                      <form className="space-y-8 text-left relative z-10" onSubmit={handleWishSubmit}>
                         <div className="space-y-3">
                           <label className="text-[7px] md:text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400 ml-2">Your Name</label>
                           <input
                             type="text"
+                            name="name"
+                            required
+                            maxLength={120}
+                            defaultValue={guestName}
                             placeholder="John Doe"
                             className="w-full bg-stone-50/50 border-b border-theme-200 px-4 py-4 text-theme-900 placeholder:text-stone-300 focus:outline-none focus:border-theme-400 focus:bg-white transition-all font-cinzel text-lg tracking-wide rounded-t-lg"
                           />
@@ -1104,18 +1180,26 @@ export default function WeddingInvitation() {
                         <div className="space-y-3">
                           <label className="text-[7px] md:text-[9px] uppercase tracking-[0.4em] font-bold text-stone-400 ml-2">Your Message</label>
                           <textarea
+                            name="message"
+                            required
+                            maxLength={2000}
                             rows={4}
                             placeholder="Wishing you a lifetime of happiness..."
                             className="w-full bg-stone-50/50 border-b border-theme-200 px-4 py-4 text-theme-900 placeholder:text-stone-300 focus:outline-none focus:border-theme-400 focus:bg-white transition-all font-cinzel text-lg tracking-wide resize-none rounded-t-lg"
                           />
                         </div>
                         <div className="pt-6 flex justify-center">
-                          <button className="bg-theme-800 text-white px-12 py-5 rounded-full font-bold uppercase tracking-[0.3em] text-[10px] hover:bg-theme-900 hover:shadow-xl hover:shadow-theme-900/20 transition-all duration-300 group/btn inline-flex items-center gap-4">
+                          <button
+                            type="submit"
+                            disabled={wishStatus.state === "sending"}
+                            className="bg-theme-800 text-white px-12 py-5 rounded-full font-bold uppercase tracking-[0.3em] text-[10px] hover:bg-theme-900 hover:shadow-xl hover:shadow-theme-900/20 transition-all duration-300 group/btn inline-flex items-center gap-4 disabled:opacity-60 disabled:cursor-wait"
+                          >
                             <span className="w-1.5 h-1.5 bg-white rotate-45 group-hover/btn:scale-150 transition-transform" />
-                            Send Wishes
+                            {wishStatus.state === "sending" ? "Sending..." : "Send Wishes"}
                             <span className="w-1.5 h-1.5 bg-white rotate-45 group-hover/btn:scale-150 transition-transform" />
                           </button>
                         </div>
+                        <FormStatusNote status={wishStatus} tone="light" />
                       </form>
                     </div>
 
@@ -1144,6 +1228,10 @@ export default function WeddingInvitation() {
               <footer className="py-12 border-t border-theme-200/30 text-center relative z-10 space-y-3">
                 <p className="text-[8px] md:text-[10px] uppercase tracking-[0.5em] text-stone-400 font-bold">
                   © 2026 Kaveesha & Sithum. <span className="hidden md:inline">|</span><br className="md:hidden block mt-2" /> All rights reserved.
+                </p>
+                <p className="text-theme-600 text-xs mt-2 font-sans tracking-wider px-4">
+                  Want a beautiful wedding website like this? Create yours with{" "}
+                  <a target="_blank" rel="noreferrer" className="text-theme-800 font-semibold hover:text-theme-500 underline underline-offset-2 transition-colors" href="https://wa.me/94707819074">invitemint</a>
                 </p>
               </footer>
             </div>
